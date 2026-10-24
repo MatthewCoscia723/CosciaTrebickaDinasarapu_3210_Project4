@@ -27,9 +27,74 @@ camera.position.set(0, 9, 15); // Raises and pulls back the camera to look down 
 camera.lookAt(new THREE.Vector3(0, 0, 0)); // Aims the camera at the center of the table
 scene.add(camera);
 
+// Loader that turns image files into textures
+const textureLoader = new THREE.TextureLoader();
+
+// Class that represents a single playing card with its value, suit, and 3D model
+class Card {
+    // IMPORTANT: Card dimensions
+    static width = 1;
+    static height = 1.45;
+    static thickness = 0.01;
+
+    // Texture shared by the back of every card
+    static backTexture = textureLoader.load("assets/cards/back.png");
+
+    constructor(value, suit) {
+        this.value = value; // 2-14, where 11 = jack, 12 = queen, 13 = king, and 14 = ace
+        this.suit = suit; // "clubs", "diamonds", "hearts", or "spades"
+        this.frontTexture = textureLoader.load("assets/cards/" + this.getFileName());
+        this.mesh = this.createMesh();
+    }
+
+    // Function that builds the image file name from the card's value and suit
+    getFileName() {
+        const faceNames = {
+            11: "jack",
+            12: "queen",
+            13: "king",
+            14: "ace"
+        };
+        const valueName = faceNames[this.value] || this.value; // Uses the plain number for 2-10
+        return valueName + "_of_" + this.suit + ".png";
+    }
+
+    // Function that builds the thin box mesh with the front and back textures
+    createMesh() {
+        const geometry = new THREE.BoxGeometry(Card.width, Card.thickness, Card.height);
+        const edgeMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff
+        });
+
+        // Array of materials for each side of the box, in the order +x, -x, +y, -y, +z, -z
+        const materials = [
+            edgeMaterial,
+            edgeMaterial,
+            new THREE.MeshStandardMaterial({
+                map: this.frontTexture // Top side shows the front
+            }),
+            new THREE.MeshStandardMaterial({
+                map: Card.backTexture // Bottom side shows the back
+            }),
+            edgeMaterial,
+            edgeMaterial
+        ];
+
+        return new THREE.Mesh(geometry, materials);
+    }
+}
+
 // Temporary grid that marks the table area for positioning the camera (replaced by the table later)
 const gridHelper = new THREE.GridHelper(12, 12);
 scene.add(gridHelper);
+
+// Temporary light so the cards are visible until the real lighting is added
+scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+// Temporary card for testing the Card class
+const testCard = new Card(12, "hearts");
+testCard.mesh.position.y = Card.thickness / 2; // Lifts the card so it rests on top of the table instead of sinking halfway in
+scene.add(testCard.mesh);
 
 // Initializes the WebGL Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
