@@ -130,9 +130,19 @@ class Deck {
     }
 }
 
-// Temporary grid that marks the table area for positioning the camera (replaced by the table later)
-const gridHelper = new THREE.GridHelper(12, 12);
-scene.add(gridHelper);
+// IMPORTANT: Width and depth of the square table top
+const tableSize = 12;
+
+// Texture for the wooden table top
+const tableTexture = textureLoader.load("assets/table.jpg");
+
+// Table top that all of the cards rest on
+const table = new THREE.Mesh(
+    new THREE.PlaneGeometry(tableSize, tableSize),
+    new THREE.MeshStandardMaterial({map: tableTexture})
+);
+table.rotation.x = -Math.PI / 2; // Rotates the plane from standing upright to lying flat, facing up
+scene.add(table);
 
 // Temporary light so the cards are visible until the real lighting is added
 scene.add(new THREE.AmbientLight(0xffffff, 1));
