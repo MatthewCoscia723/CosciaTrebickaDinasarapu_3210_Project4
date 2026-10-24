@@ -35,7 +35,7 @@ class Card {
     // IMPORTANT: Card dimensions
     static width = 1;
     static height = 1.45;
-    static thickness = 0.01;
+    static thickness = 0.02;
 
     // Texture shared by the back of every card
     static backTexture = textureLoader.load("assets/cards/back.png");
@@ -62,8 +62,9 @@ class Card {
     // Function that builds the thin box mesh with the front and back textures
     createMesh() {
         const geometry = new THREE.BoxGeometry(Card.width, Card.thickness, Card.height);
+        const edgeShade = 0.6 + Math.random() * 0.4; // Random light grey so each card's edge stands out from its neighbors in the stack
         const edgeMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff
+            color: new THREE.Color(edgeShade, edgeShade, edgeShade)
         });
 
         // Array of materials for each side of the box, in the order +x, -x, +y, -y, +z, -z
@@ -130,6 +131,37 @@ class Deck {
     }
 }
 
+// Class that represents a player and their face-down draw pile
+class Player {
+    constructor(name, cards, pilePosition) {
+        this.name = name;
+        this.cards = cards; // Array of the player's cards, where index 0 is the top of the pile
+        this.pilePosition = pilePosition; // Spot on the table where the pile sits
+
+        // Adds every card in the player's hand to the scene
+        for (const card of this.cards) {
+            scene.add(card.mesh);
+        }
+
+        this.updatePile();
+    }
+
+    // Function that stacks the player's cards face down at their pile position
+    updatePile() {
+        // Iterates over every card, placing the top card (index 0) highest in the stack
+        for (let i = 0; i < this.cards.length; i++) {
+            const mesh = this.cards[i].mesh;
+            const stackIndex = this.cards.length - 1 - i; // 0 for the bottom card, counting up to the top card
+            mesh.position.set(
+                this.pilePosition.x,
+                stackIndex * Card.thickness + Card.thickness / 2, // Rests each card on the one below it
+                this.pilePosition.z
+            );
+            mesh.rotation.set(0, 0, Math.PI); // Flips the card face down
+        }
+    }
+}
+
 // IMPORTANT: Width and depth of the square table top
 const tableSize = 12;
 
@@ -147,15 +179,25 @@ scene.add(table);
 // Temporary light so the cards are visible until the real lighting is added
 scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-// Temporary card for testing the Card class
-const testCard = new Card(12, "hearts");
-testCard.mesh.position.y = Card.thickness / 2; // Lifts the card so it rests on top of the table instead of sinking halfway in
-scene.add(testCard.mesh);
-
 // Deck that is shuffled and dealt to 3 players
 const deck = new Deck();
 deck.shuffle();
 const hands = deck.deal(3);
+
+// IMPORTANT: Spots on the table for each player's pile
+const pilePositions = [
+    new THREE.Vector3(-4, 0, 3), // Player 1, front left
+    new THREE.Vector3(4, 0, 3), // Player 2, front right
+    new THREE.Vector3(0, 0, -4) // Player 3, back center
+];
+
+// Array that stores the 3 players
+const players = [];
+
+// Iterates over each hand, creating a player with their own pile position
+for (let i = 0; i < hands.length; i++) {
+    players.push(new Player("Player " + (i + 1), hands[i], pilePositions[i]));
+}
 
 // Initializes the WebGL Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
