@@ -84,6 +84,52 @@ class Card {
     }
 }
 
+// Class that builds, shuffles, and deals a standard 52 card deck
+class Deck {
+    // Array of the 4 suit names, matching the image file names
+    static suits = ["clubs", "diamonds", "hearts", "spades"];
+
+    constructor() {
+        this.cards = []; // Array that stores every card in the deck
+
+        // Iterates over every suit and every value from 2 to 14 to build all 52 cards
+        for (const suit of Deck.suits) {
+            for (let value = 2; value <= 14; value++) {
+                this.cards.push(new Card(value, suit));
+            }
+        }
+    }
+
+    // Function that shuffles the cards into a random order using the Fisher-Yates algorithm
+    shuffle() {
+        // Iterates backwards through the deck, swapping each card with a random card at or before it
+        for (let i = this.cards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
+            const temp = this.cards[i];
+            this.cards[i] = this.cards[j];
+            this.cards[j] = temp;
+        }
+    }
+
+    // Function that deals the cards evenly to each player and returns an array of hands
+    deal(numPlayers) {
+        const cardsPerPlayer = Math.floor(this.cards.length / numPlayers); // 17 each for 3 players, leaving 1 card out
+        const hands = []; // Array that stores each player's array of cards
+
+        // Creates an empty hand for each player
+        for (let p = 0; p < numPlayers; p++) {
+            hands.push([]);
+        }
+
+        // Deals one card at a time around the table, like a real dealer
+        for (let i = 0; i < cardsPerPlayer * numPlayers; i++) {
+            hands[i % numPlayers].push(this.cards[i]);
+        }
+
+        return hands;
+    }
+}
+
 // Temporary grid that marks the table area for positioning the camera (replaced by the table later)
 const gridHelper = new THREE.GridHelper(12, 12);
 scene.add(gridHelper);
@@ -95,6 +141,11 @@ scene.add(new THREE.AmbientLight(0xffffff, 1));
 const testCard = new Card(12, "hearts");
 testCard.mesh.position.y = Card.thickness / 2; // Lifts the card so it rests on top of the table instead of sinking halfway in
 scene.add(testCard.mesh);
+
+// Deck that is shuffled and dealt to 3 players
+const deck = new Deck();
+deck.shuffle();
+const hands = deck.deal(3);
 
 // Initializes the WebGL Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
