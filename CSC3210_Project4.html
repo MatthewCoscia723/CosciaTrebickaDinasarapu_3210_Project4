@@ -199,6 +199,32 @@ for (let i = 0; i < hands.length; i++) {
     players.push(new Player("Player " + (i + 1), hands[i], pilePositions[i]));
 }
 
+function playRound() {
+    let playedCards = [];
+
+    for (let i = 0; i < players.length; i++) {
+        let card = players[i].cards.shift();
+
+        playedCards.push(card);
+
+        card.mesh.position.set((i - 1) * 1.5, 0.02, 0);
+
+        card.mesh.rotation.set(0, 0, 0);
+
+        players[i].updatePile();
+    }
+
+    let winner = 0;
+
+    for (let i = 1; i < playedCards.length; i++) {
+        if (playedCards[i].value > playedCards[winner].value) {
+            winner = i
+        }
+    }
+
+    console.log(players[winner].name + "wins with a " + playedCards[winner].value);
+}
+
 // Initializes the WebGL Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setClearColor(0x111111, 1.0); // Dark grey background
@@ -214,6 +240,12 @@ function onWindowResize() {
 }
 
 window.addEventListener("resize", onWindowResize);
+
+window.addEventListener("keydown", function(event) {
+    if (event.key.toLowerCase() === "n") {
+        playRound();
+    }
+});
 
 // Function that runs once per frame to update and draw the scene
 function animate() {
