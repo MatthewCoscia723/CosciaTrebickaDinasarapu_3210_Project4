@@ -187,8 +187,8 @@ const hands = deck.deal(3);
 // IMPORTANT: Spots on the table for each player's pile
 const pilePositions = [
     new THREE.Vector3(-4, 0, 3), // Player 1, front left
-    new THREE.Vector3(4, 0, 3), // Player 2, front right
-    new THREE.Vector3(0, 0, -4) // Player 3, back center
+    new THREE.Vector3(0, 0, -4), // Player 2, back center
+    new THREE.Vector3(4, 0, 3) // Player 3, front right
 ];
 
 // Array that stores the 3 players
@@ -219,7 +219,15 @@ function drawCards() {
         card.startY = card.mesh.position.y;
         card.startZ = card.mesh.position.z;
 
-        card.endX = (i - 1) * 1.5;
+        if (i == 0) {
+            card.endX = -1.5
+        }
+        else if (i == 1) {
+            card.endX = 0;
+        }
+        else {
+            card.endX = 1.5;
+        }
         card.endY = 0.05;
         card.endZ = 0;
         
