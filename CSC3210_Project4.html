@@ -202,19 +202,50 @@ for (let i = 0; i < hands.length; i++) {
 let playedCards = [];
 let winner = 0;
 let roundWaiting = false;
+let movingCards = false;
+let moveAmount = 0;
 
 function drawCards() {
     playedCards = [];
+    movingCards = true;
 
     for (let i = 0; i < players.length; i++) {
         let card = players[i].cards.shift();
 
         playedCards.push(card);
 
-        card.mesh.position.set((i - 1) * 1.5, 0.05, 0);
-        card.mesh.rotation.set(0, 0, 0);
+        card.startX = card.mesh.position.x;
+        card.startY = card.mesh.position.y;
+        card.startZ = card.mesh.position.z;
+
+        card.endX = (i - 1) * 1.5;
+        card.endY = 0.05;
+        card.endZ = 0;
+        
+        card.mesh.rotation.set(Math.PI, 0, 0);
 
         players[i].updatePile();
+    }
+    moveAmount = 0;
+}
+
+function moveCards() {
+    moveAmount = moveAmount + 0.02;
+
+    for (let i = 0; i < playedCards.length; i++) {
+        let card = playedCards[i];
+
+        card.mesh.position.x = card.startX + (card.endX - card.startX) * moveAmount;
+        card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount;
+        card.mesh.position.z = card.startZ + (card.endZ - card.startZ) * moveAmount;
+
+        card.mesh.rotation.x = Math.PI * (1 - moveAmount);
+    }
+
+    if (moveAmount >= 1) {
+        movingCards = false;
+        findWinner();
+        roundWaiting = true;
     }
 }
 
@@ -242,15 +273,16 @@ function collectCards() {
 
 function playRound() {
 
+    if (movingCards) {
+        return;
+    }
+
     if (roundWaiting) {
         collectCards();
         roundWaiting = false;
     }
 
     drawCards();
-    findWinner();
-
-    roundWaiting = true;
 }
 
 // Initializes the WebGL Renderer
@@ -278,6 +310,9 @@ window.addEventListener("keydown", function(event) {
 // Function that runs once per frame to update and draw the scene
 function animate() {
     requestAnimationFrame(animate); // Schedules the next frame
+    if (movingCards) {
+        moveCards();
+    }
     renderer.render(scene, camera);
 }
 
