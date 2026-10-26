@@ -64,7 +64,8 @@ class Card {
         const geometry = new THREE.BoxGeometry(Card.width, Card.thickness, Card.height);
         const edgeShade = 0.6 + Math.random() * 0.4; // Random light grey so each card's edge stands out from its neighbors in the stack
         const edgeMaterial = new THREE.MeshStandardMaterial({
-            color: new THREE.Color(edgeShade, edgeShade, edgeShade)
+            color: new THREE.Color(edgeShade, edgeShade, edgeShade),
+            emissive: 0x000000
         });
 
         // Array of materials for each side of the box, in the order +x, -x, +y, -y, +z, -z
@@ -205,10 +206,12 @@ let roundWaiting = false;
 let movingCards = false;
 let moveAmount = 0;
 let collectingCards = false;
+let winnerScale = 1;
 
 function drawCards() {
     playedCards = [];
     movingCards = true;
+    winnerScale = 1;
 
     for (let i = 0; i < players.length; i++) {
         let card = players[i].cards.shift();
@@ -274,6 +277,7 @@ function collectAnimation() {
     if (moveAmount >= 1) {
         for (let i = 0; i < playedCards.length; i++) {
             playedCards[i].mesh.rotation.set(0, 0, Math.PI);
+            playedCards[i].mesh.scale.set(1, 1, 1);
             players[winner].cards.push(playedCards[i]);
         }
 
@@ -366,6 +370,11 @@ function animate() {
 
     if (collectingCards) {
         collectAnimation();
+    }
+
+    if (roundWaiting && winnerScale < 1.25) {
+        winnerScale = winnerScale + 0.005;
+        playedCards[winner].mesh.scale.set(winnerScale, winnerScale, winnerScale);
     }
     renderer.render(scene, camera);
 }
