@@ -200,12 +200,10 @@ for (let i = 0; i < hands.length; i++) {
 }
 
 let playedCards = [];
+let winner = 0;
+let roundWaiting = false;
 
-function playRound() {
-    for (let i = 0; i < playedCards.length; i++) {
-        scene.remove(playedCards[i].mesh);
-    }
-
+function drawCards() {
     playedCards = [];
 
     for (let i = 0; i < players.length; i++) {
@@ -213,14 +211,15 @@ function playRound() {
 
         playedCards.push(card);
 
-        card.mesh.position.set((i - 1) * 1.5, 0.02, 0);
-
+        card.mesh.position.set((i - 1) * 1.5, 0.05, 0);
         card.mesh.rotation.set(0, 0, 0);
 
         players[i].updatePile();
     }
+}
 
-    let winner = 0;
+function findWinner() {
+    winner = 0;
 
     for (let i = 1; i < playedCards.length; i++) {
         if (playedCards[i].value > playedCards[winner].value) {
@@ -228,7 +227,30 @@ function playRound() {
         }
     }
 
-    console.log(players[winner].name + "wins with a " + playedCards[winner].value);
+    console.log(players[winner].name + " wins with a " + playedCards[winner].value);
+}
+
+function collectCards() {
+    for (let i = 0; i < playedCards.length; i++) {
+        players[winner].cards.push(playedCards[i]);
+    }
+
+    players[winner].updatePile();
+
+    playedCards = [];
+}
+
+function playRound() {
+
+    if (roundWaiting) {
+        collectCards();
+        roundWaiting = false;
+    }
+
+    drawCards();
+    findWinner();
+
+    roundWaiting = true;
 }
 
 // Initializes the WebGL Renderer
