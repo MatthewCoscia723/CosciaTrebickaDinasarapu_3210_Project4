@@ -204,6 +204,7 @@ let winner = 0;
 let roundWaiting = false;
 let movingCards = false;
 let moveAmount = 0;
+let collectingCards = false;
 
 function drawCards() {
     playedCards = [];
@@ -249,6 +250,32 @@ function moveCards() {
     }
 }
 
+function collectAnimation() {
+    moveAmount = moveAmount + 0.02;
+
+    for (let i = 0; i < playedCards.length; i++) {
+        let card = playedCards[i];
+
+        card.mesh.position.x = card.startX + (card.endX - card.startX) * moveAmount;
+        card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount;
+        card.mesh.position.z = card.startZ + (card.endZ - card.startZ) * moveAmount;
+
+        card.mesh.rotation.x = Math.PI * Math.min(moveAmount, 1);
+    }
+
+    if (moveAmount >= 1) {
+        for (let i = 0; i < playedCards.length; i++) {
+            playedCards[i].mesh.rotation.set(0, 0, Math.PI);
+            players[winner].cards.push(playedCards[i]);
+        }
+
+        players[winner].updatePile();
+
+        playedCards = [];
+        collectingCards = false;
+    }
+}
+
 function findWinner() {
     winner = 0;
 
@@ -273,13 +300,28 @@ function collectCards() {
 
 function playRound() {
 
-    if (movingCards) {
+    if (movingCards || collectingCards) {
         return;
     }
 
     if (roundWaiting) {
-        collectCards();
+        collectingCards = true;
+        moveAmount = 0;
+
+        for (let i = 0; i < playedCards.length; i++) {
+            let card = playedCards[i];
+
+            card.startX = card.mesh.position.x;
+            card.startY = card.mesh.position.y;
+            card.startZ = card.mesh.position.z;
+
+            card.endX = players[winner].pilePosition.x;
+            card.endY = Card.thickness / 2;
+            card.endZ = players[winner].pilePosition.z;
+        }
+
         roundWaiting = false;
+        return;
     }
 
     drawCards();
@@ -312,6 +354,10 @@ function animate() {
     requestAnimationFrame(animate); // Schedules the next frame
     if (movingCards) {
         moveCards();
+    }
+
+    if (collectingCards) {
+        collectAnimation();
     }
     renderer.render(scene, camera);
 }
