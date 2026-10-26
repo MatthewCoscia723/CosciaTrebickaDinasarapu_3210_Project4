@@ -207,6 +207,8 @@ let movingCards = false;
 let moveAmount = 0;
 let collectingCards = false;
 let winnerScale = 1;
+let winnerTimer = 0;
+const clock = new THREE.Clock();
 
 function drawCards() {
     playedCards = [];
@@ -300,42 +302,11 @@ function findWinner() {
     console.log(players[winner].name + " wins with a " + playedCards[winner].value);
 }
 
-function collectCards() {
-    for (let i = 0; i < playedCards.length; i++) {
-        players[winner].cards.push(playedCards[i]);
-    }
-
-    players[winner].updatePile();
-
-    playedCards = [];
-}
-
 function playRound() {
 
-    if (movingCards || collectingCards) {
+    if (movingCards || collectingCards || roundWaiting) {
         return;
     }
-
-    if (roundWaiting) {
-        collectingCards = true;
-        moveAmount = 0;
-
-        for (let i = 0; i < playedCards.length; i++) {
-            let card = playedCards[i];
-
-            card.startX = card.mesh.position.x;
-            card.startY = card.mesh.position.y;
-            card.startZ = card.mesh.position.z;
-
-            card.endX = players[winner].pilePosition.x;
-            card.endY = Card.thickness / 2;
-            card.endZ = players[winner].pilePosition.z;
-        }
-
-        roundWaiting = false;
-        return;
-    }
-
     drawCards();
 }
 
@@ -372,9 +343,35 @@ function animate() {
         collectAnimation();
     }
 
-    if (roundWaiting && winnerScale < 1.25) {
-        winnerScale = winnerScale + 0.005;
-        playedCards[winner].mesh.scale.set(winnerScale, winnerScale, winnerScale);
+    if (roundWaiting) {
+        if (winnerTimer == 0) {
+            winnerTimer = clock.getElapsedTime();
+        }
+
+        if (winnerScale < 1.25) {
+            winnerScale = winnerScale + 0.01;
+            playedCards[winner].mesh.scale.set(winnerScale, winnerScale, winnerScale);
+        }
+
+        if (clock.getElapsedTime() - winnerTimer >= 1) {
+            collectingCards = true;
+            moveAmount = 0;
+
+            for (let i = 0; i < playedCards.length; i++) {
+                let card = playedCards[i];
+
+                card.startX = card.mesh.position.x;
+                card.startY = card.mesh.position.y;
+                card.startZ = card.mesh.position.z;
+
+                card.endX = players[winner].pilePosition.x;
+                card.endY = Card.thickness / 2;
+                card.endZ = players[winner].pilePosition.z;
+            }
+
+            roundWaiting = false;
+            winnerTimer = 0;
+        }
     }
     renderer.render(scene, camera);
 }
