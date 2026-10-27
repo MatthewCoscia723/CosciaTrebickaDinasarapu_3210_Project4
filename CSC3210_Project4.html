@@ -138,7 +138,7 @@ class Player {
         this.name = name;
         this.cards = cards; // Array of the player's cards, where index 0 is the top of the pile
         this.pilePosition = pilePosition; // Spot on the table where the pile sits
-        this.eliminated = false;
+        this.eliminated = false; // Attribute to see if a player is eliminated from the game
 
         // Adds every card in the player's hand to the scene
         for (const card of this.cards) {
@@ -201,24 +201,32 @@ for (let i = 0; i < hands.length; i++) {
     players.push(new Player("Player " + (i + 1), hands[i], pilePositions[i]));
 }
 
+// arrays of all total cards, cards to compare (for game), and cards to animate (comparison + war cards)
 let playedCards = [];
 let comparisonCards = [];
 let cardsToMove = [];
 
-let winner = 0;
+// attributes for animations
 let roundWaiting = false;
 let movingCards = false;
-let moveAmount = 0;
 let collectingCards = false;
+let moveAmount = 0;
+
+//attributes for winning card + winning players
+let winner = 0;
+let gameOver = false;
 let winnerScale = 1;
 let winnerTimer = 0;
-let warRound = false;
-let warStage = 0;
-let gameOver = false;
-let fastForward = false;
-
 const clock = new THREE.Clock();
 
+//attributes for war
+let warRound = false;
+let warStage = 0;
+
+// fast forward attribute
+let fastForward = false;
+
+// takes one card from each surviving player and moves it to their respective middle position
 function drawCards() {
     playedCards = [];
     comparisonCards = [];
@@ -228,54 +236,68 @@ function drawCards() {
     winnerScale = 1;
     warRound = false;
 
+    // goes through each player and draws their top card
     for (let i = 0; i < players.length; i++) {
+        // check if they are eliminated before drawing
         if (players[i].eliminated) {
             continue;
         }
 
+        // removes the top card from their pile
         let card = players[i].cards.shift();
 
+        // if they have no card, eliminate them
         if (card == undefined) {
             players[i].eliminated = true;
             continue;
         }
 
+        // remember whos card is which player
         card.playerIndex = i;
         card.faceDown = false;
         
+        // stores the cards for playing, comparisons and animations
         playedCards.push(card);
         comparisonCards.push(card);
         cardsToMove.push(card);
 
+        // starting positions for animations
         card.startX = card.mesh.position.x;
         card.startY = card.mesh.position.y;
         card.startZ = card.mesh.position.z;
 
+        // end positions for animations (middle of table)
         card.endX = (i - 1) * 1.5;
         card.endY = 0.05;
         card.endZ = 0;
         
+        // rotates it face up for animation
         card.mesh.rotation.set(Math.PI, 0, 0);
 
+        // updates the pile
         players[i].updatePile();
     }
-    moveAmount = 0;
+    moveAmount = 0; // reset any previous round animation movement
 }
 
+// handles war card drawing when war happens (2+ cards draw)
 function drawWarCards() {
     comparisonCards = [];
     cardsToMove = [];
     movingCards = true;
 
+    // check if any players are eliminated
     for (let i = 0; i < players.length; i++) {
         if (players[i].eliminated) {
             continue;
         }
         
+        // check if they can even play war. you need 2 cards for war, so if you only have 1 then you are eliminated
         if (warStage == 1 && players[i].cards.length < 2) {
             players[i].eliminated = true;
             console.log(players[i].name + " has been eliminated from war");
 
+            // move cards to middle as war (on top of previous cards)
             while (players[i].cards.length > 0) {
                 let card = players[i].cards.shift();
 
@@ -285,6 +307,7 @@ function drawWarCards() {
                 playedCards.push(card);
                 cardsToMove.push(card);
 
+                // save positions and destinations for animations
                 card.startX = card.mesh.position.x;
                 card.startY = card.mesh.position.y;
                 card.startZ = card.mesh.position.z;
@@ -300,15 +323,18 @@ function drawWarCards() {
             continue;
         }
 
+        // stage 1: all survivors put a FACE DOWN card ontop of the original face up cards
         if (warStage == 1) {
             let downCard = players[i].cards.shift();
             
             downCard.playerIndex = i;
             downCard.faceDown = true;
 
+            // cards are NOT added to comparison cards, as they are "trash" cards that are not to be used
             playedCards.push(downCard);
             cardsToMove.push(downCard);
 
+            // save positions and destinations for animation
             downCard.startX = downCard.mesh.position.x;
             downCard.startY = downCard.mesh.position.y;
             downCard.startZ = downCard.mesh.position.z;
@@ -320,16 +346,19 @@ function drawWarCards() {
             downCard.mesh.rotation.set(Math.PI, 0, 0);
         }
 
+        // stage 2: after placing a face down card, all players place a face up card
         if (warStage == 2) {
             let card = players[i].cards.shift();
 
             card.playerIndex = i;
             card.faceDown = false;
 
+            // add cards to arrays (especially comparison because it is not a "trash" card)
             playedCards.push(card);
             comparisonCards.push(card);
             cardsToMove.push(card);
 
+            // save positions and destinations for animation
             card.startX = card.mesh.position.x;
             card.startY = card.mesh.position.y;
             card.startZ = card.mesh.position.z;
@@ -342,13 +371,12 @@ function drawWarCards() {
         }
         players[i].updatePile();
     }
-    if (checkGameOver()) {
-        warRound = false;
-    }
     moveAmount = 0;
 }
 
+// helper method to animate cards from piles to the middle of table (animation #1)
 function moveCards() {
+    // if fast forward, just make the cards move faster
     if (fastForward) {
         moveAmount = moveAmount + 0.15;
     }
@@ -356,6 +384,7 @@ function moveCards() {
         moveAmount = moveAmount + 0.02;
     }
 
+    // updates the position and rotation of every moving card
     for (let i = 0; i < cardsToMove.length; i++) {
         let card = cardsToMove[i];
 
@@ -363,6 +392,7 @@ function moveCards() {
         card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount + Math.sin(Math.PI * moveAmount) * 0.6;
         card.mesh.position.z = card.startZ + (card.endZ - card.startZ) * moveAmount;
 
+        // keep face down cards as face down. otherwise, slowly rotate the card so it can be face up.
         if (card.faceDown) {
             card.mesh.rotation.x = Math.PI;
         }
@@ -371,18 +401,23 @@ function moveCards() {
         }
     }
 
+    // once animation finishes, stop moving the cards
     if (moveAmount >= 1) {
         movingCards = false;
         
+        // do not compare cards that are face down.
         if (warStage != 1) {
             findWinner();
         }
 
+        // small intermission after animation (to look at cards)
         roundWaiting = true;
     }
 }
 
+// animation #2: winner collects all cards in the middle
 function collectAnimation() {
+    // fast forward speeds up the animation
     if (fastForward) {
         moveAmount = moveAmount + 0.15;
     }
@@ -390,6 +425,7 @@ function collectAnimation() {
         moveAmount = moveAmount + 0.02;
     }
 
+    // moves each played card towards the winner pile
     for (let i = 0; i < playedCards.length; i++) {
         let card = playedCards[i];
 
@@ -400,29 +436,37 @@ function collectAnimation() {
         card.mesh.rotation.x = Math.PI * Math.min(moveAmount, 1);
     }
 
+    // once all cards are at the pile, update attributes and arrays
     if (moveAmount >= 1) {
+        // reset card appearances and give it to the winner
         for (let i = 0; i < playedCards.length; i++) {
             playedCards[i].mesh.rotation.set(0, 0, Math.PI);
             playedCards[i].mesh.scale.set(1, 1, 1);
             players[winner].cards.push(playedCards[i]);
         }
 
+        // add the cards to the winner pile visually
         players[winner].updatePile();
-
         playedCards = [];
+        
         collectingCards = false;
         warStage = 0;
+        
+        // check if there is anyone eliminated after collecting cards
         checkGameOver();
     }
 }
 
+// compares face up cards and finds either the winner, or detects if there is a tie
 function findWinner() {
     winner = 0;
 
+    // no face up cards = no comparison
     if (comparisonCards.length == 0) {
         return;
     }
 
+    // finds the position of the highest value card in compareCards array
     for (let i = 1; i < comparisonCards.length; i++) {
         if (comparisonCards[i].value > comparisonCards[winner].value) {
             winner = i
@@ -432,16 +476,19 @@ function findWinner() {
     let highestValue = comparisonCards[winner].value;
     let tie = false;
 
+    // checks if there are any ties 
     for (let i = 0; i < comparisonCards.length; i++) {
         if (i != winner && comparisonCards[i].value == highestValue) {
             tie = true;
         }
     }
 
+    // if there is a tie, start a war
     if (tie) {
         warRound = true;
         console.log("war is happening");
     }
+    // mark the player as the winner for that round, and display that they won the round.
     else {
         winner = comparisonCards[winner].playerIndex;
         
@@ -451,26 +498,30 @@ function findWinner() {
         else {
             console.log(players[winner].name + " wins the round with a " + highestValue);
         }
-        warRound = false;
+        warRound = false; // safety to make sure war does not start when there is not a tie.
     }
 }
 
+// marks players as eliminated if they have no cards, and checks if the game has fully ended
 function checkGameOver() {
     let playersLeft = 0;
     let lastPlayer = 0;
 
+    // a player with an empty pile is marked as eliminated if they are already not eliminated
     for (let i = 0; i < players.length; i++) {
         if (players[i].cards.length == 0 && !players[i].eliminated) {
             players[i].eliminated = true;
             console.log(players[i].name + " has been eliminated");
         }
 
+        // count the players who are left in the game
         if (!players[i].eliminated) {
             playersLeft++;
             lastPlayer = i;
         }
     }
 
+    // game ends when there is at most one active player (or zero, if you end up in war 17/2 times)
     if (playersLeft <= 1) {
         gameOver = true;
 
@@ -485,16 +536,20 @@ function checkGameOver() {
     return false;
 }
 
+// starts a new round when called
 function playRound() {
 
+    // prevent another round from starting while cards are in an animation
     if (movingCards || collectingCards || roundWaiting || gameOver) {
         return;
     }
 
+    // do not play a round if the entire game has ended
     if (checkGameOver()) {
         return;
     }
 
+    // other wise, play the round and draw cards.
     drawCards();
 }
 
@@ -515,60 +570,77 @@ function onWindowResize() {
 window.addEventListener("resize", onWindowResize);
 
 window.addEventListener("keydown", function(event) {
+    // if n is pressed, play one single full round
     if (event.key.toLowerCase() === "n") {
         playRound();
     }
 
+    // if f is pressed, fast forward
     if (event.key.toLowerCase() === "f") {
         fastForward = !fastForward;
-        console.log("fast forwarding");
+        if (fastForward) {
+            console.log("fast forwarding");
+        }
+        else {
+            console.log("slowing down");
+        }
     }
 });
 
 // Function that runs once per frame to update and draw the scene
 function animate() {
     requestAnimationFrame(animate); // Schedules the next frame
+    // constantly call movingCards to animate moving the cards
     if (movingCards) {
         moveCards();
     }
 
+    // constantly call collectingCards to animate winner collecting the cards
     if (collectingCards) {
         collectAnimation();
     }
 
+    // constantly play rounds if in fast forward mode
     if (fastForward && !movingCards && !collectingCards && !roundWaiting && !gameOver) {
         playRound();
     }
 
+    // intermission period (between drawing and collecting, to actually see the cards)
     if (roundWaiting) {
         if (fastForward) {
             winnerTimer = clock.getElapsedTime() - 1;
         }
         
+        // records start time of intermission period
         if (winnerTimer == 0) {
             winnerTimer = clock.getElapsedTime();
         }
 
+        // slightly largens the winning card to make it obvious who won
         if (!warRound && winnerScale < 1.25) {
             winnerScale = winnerScale + 0.01;
 
             let winningCard;
 
+            // find the card that won
             for (let i = 0; i < comparisonCards.length; i++) {
                 if (comparisonCards[i].playerIndex == winner) {
                     winningCard = comparisonCards[i];
                 }
             }
 
+            // apply size scale to winning card
             if (winningCard != undefined) {
                 winningCard.mesh.scale.set(winnerScale, winnerScale, winnerScale);
             }
         }
 
+        // continue when intermission period finishes
         if (clock.getElapsedTime() - winnerTimer >= 1) {
             roundWaiting = false;
             winnerTimer = 0;
             
+            // start war and war animations during war
             if (warRound) {
                 if (warStage == 0 || warStage == 2) {
                     warStage = 1;
@@ -579,6 +651,8 @@ function animate() {
                     drawWarCards();
                 }
             }
+            
+            // if theres not war, animate winner collecting cards
             else {
                 collectingCards = true;
                 moveAmount = 0;
@@ -586,6 +660,7 @@ function animate() {
                 for (let i = 0; i < playedCards.length; i++) {
                     let card = playedCards[i];
 
+                    // save positions and destinations for animations
                     card.startX = card.mesh.position.x;
                     card.startY = card.mesh.position.y;
                     card.startZ = card.mesh.position.z;
