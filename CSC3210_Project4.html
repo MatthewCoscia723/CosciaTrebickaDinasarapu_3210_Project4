@@ -138,6 +138,7 @@ class Player {
         this.name = name;
         this.cards = cards; // Array of the player's cards, where index 0 is the top of the pile
         this.pilePosition = pilePosition; // Spot on the table where the pile sits
+        this.eliminated = false;
 
         // Adds every card in the player's hand to the scene
         for (const card of this.cards) {
@@ -213,6 +214,7 @@ let winnerScale = 1;
 let winnerTimer = 0;
 let warRound = false;
 let warStage = 0;
+let gameOver = false;
 
 const clock = new THREE.Clock();
 
@@ -226,14 +228,19 @@ function drawCards() {
     warRound = false;
 
     for (let i = 0; i < players.length; i++) {
+        if (players[i].eliminated) {
+            continue;
+        }
+
         let card = players[i].cards.shift();
+
+        if (card == undefined) {
+            players[i].eliminated = true;
+            continue;
+        }
 
         card.playerIndex = i;
         card.faceDown = false;
-
-        if (card == undefined) {
-            continue;
-        }
         
         playedCards.push(card);
         comparisonCards.push(card);
@@ -260,9 +267,41 @@ function drawWarCards() {
     movingCards = true;
 
     for (let i = 0; i < players.length; i++) {
-        if (warStage == 1 && players[i].cards.length >= 2) {
-            let downCard = players[i].cards.shift();
+        if (players[i].eliminated) {
+            continue;
+        }
+        
+        if (warStage == 1 && players[i].cards.length < 2) {
+            players[i].eliminated = true;
 
+            while (players[i].cards.length > 0) {
+                let card = players[i].cards.shift();
+
+                card.playerIndex = i;
+                card.faceDown = true;
+                
+                playedCards.push(card);
+                cardsToMove.push(card);
+
+                card.startX = card.mesh.position.x;
+                card.startY = card.mesh.position.y;
+                card.startZ = card.mesh.position.z;
+
+                card.endX = (i - 1) * 1.5;
+                card.endY = 0.09;
+                card.endZ = 0;
+                
+                card.mesh.rotation.set(Math.PI, 0, 0);
+            }
+
+            console.log(players[i].name + " has been eliminated from war");
+            players[i].updatePile();
+            continue;
+        }
+
+        if (warStage == 1) {
+            let downCard = players[i].cards.shift();
+            
             downCard.playerIndex = i;
             downCard.faceDown = true;
 
@@ -280,7 +319,7 @@ function drawWarCards() {
             downCard.mesh.rotation.set(Math.PI, 0, 0);
         }
 
-        if (warStage == 2 && players[i].cards.length > 0) {
+        if (warStage == 2) {
             let card = players[i].cards.shift();
 
             card.playerIndex = i;
@@ -298,9 +337,12 @@ function drawWarCards() {
             card.endY = 0.13;
             card.endZ = 0;
 
-            card.mesh.rotation.set(Math.PI, 0, 0)
+            card.mesh.rotation.set(Math.PI, 0, 0);
         }
         players[i].updatePile();
+    }
+    if (checkGameOver()) {
+        warRound = false;
     }
     moveAmount = 0;
 }
@@ -359,6 +401,7 @@ function collectAnimation() {
         playedCards = [];
         collectingCards = false;
         warStage = 0;
+        checkGameOver();
     }
 }
 
@@ -401,11 +444,45 @@ function findWinner() {
     }
 }
 
+function checkGameOver() {
+    let playersLeft = 0;
+    let lastPlayer = 0;
+
+    for (let i = 0; i < players.length; i++) {
+        if (players[i].cards.length == 0) {
+            players[i].eliminated = true;
+        }
+
+        if (!players[i].eliminated) {
+            playersLeft++;
+            lastPlayer = i;
+        }
+    }
+
+    if (playersLeft <= 1) {
+        gameOver = true;
+
+        if (playersLeft == 1) {
+            console.log(players[lastPlayer].name + " wins the game");
+        }
+        else {
+            console.log("The game ended with no players left");
+        }
+        return true;
+    }
+    return false;
+}
+
 function playRound() {
 
-    if (movingCards || collectingCards || roundWaiting) {
+    if (movingCards || collectingCards || roundWaiting || gameOver) {
         return;
     }
+
+    if (checkGameOver()) {
+        return;
+    }
+
     drawCards();
 }
 
@@ -450,7 +527,14 @@ function animate() {
         if (!warRound && winnerScale < 1.25) {
             winnerScale = winnerScale + 0.01;
 
-            let winningCard = comparisonCards.find(card => card.playerIndex == winner);
+            let winningCard;
+
+            for (let i = 0; i < comparisonCards.length; i++) {
+                if (comparisonCards[i].playerIndex == winner) {
+                    winningCard = comparisonCards[i];
+                }
+            }
+
             if (winningCard != undefined) {
                 winningCard.mesh.scale.set(winnerScale, winnerScale, winnerScale);
             }
