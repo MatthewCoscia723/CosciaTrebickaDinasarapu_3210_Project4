@@ -360,7 +360,7 @@ function moveCards() {
         let card = cardsToMove[i];
 
         card.mesh.position.x = card.startX + (card.endX - card.startX) * moveAmount;
-        card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount;
+        card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount + Math.sin(Math.PI * moveAmount) * 0.6;
         card.mesh.position.z = card.startZ + (card.endZ - card.startZ) * moveAmount;
 
         if (card.faceDown) {
@@ -394,7 +394,7 @@ function collectAnimation() {
         let card = playedCards[i];
 
         card.mesh.position.x = card.startX + (card.endX - card.startX) * moveAmount;
-        card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount;
+        card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount + Math.sin(Math.PI * moveAmount) * 0.6;
         card.mesh.position.z = card.startZ + (card.endZ - card.startZ) * moveAmount;
 
         card.mesh.rotation.x = Math.PI * Math.min(moveAmount, 1);
