@@ -215,6 +215,7 @@ let winnerTimer = 0;
 let warRound = false;
 let warStage = 0;
 let gameOver = false;
+let fastForward = false;
 
 const clock = new THREE.Clock();
 
@@ -273,6 +274,7 @@ function drawWarCards() {
         
         if (warStage == 1 && players[i].cards.length < 2) {
             players[i].eliminated = true;
+            console.log(players[i].name + " has been eliminated from war");
 
             while (players[i].cards.length > 0) {
                 let card = players[i].cards.shift();
@@ -294,7 +296,6 @@ function drawWarCards() {
                 card.mesh.rotation.set(Math.PI, 0, 0);
             }
 
-            console.log(players[i].name + " has been eliminated from war");
             players[i].updatePile();
             continue;
         }
@@ -348,7 +349,12 @@ function drawWarCards() {
 }
 
 function moveCards() {
-    moveAmount = moveAmount + 0.02;
+    if (fastForward) {
+        moveAmount = moveAmount + 0.15;
+    }
+    else {
+        moveAmount = moveAmount + 0.02;
+    }
 
     for (let i = 0; i < cardsToMove.length; i++) {
         let card = cardsToMove[i];
@@ -377,7 +383,12 @@ function moveCards() {
 }
 
 function collectAnimation() {
-    moveAmount = moveAmount + 0.02;
+    if (fastForward) {
+        moveAmount = moveAmount + 0.15;
+    }
+    else {
+        moveAmount = moveAmount + 0.02;
+    }
 
     for (let i = 0; i < playedCards.length; i++) {
         let card = playedCards[i];
@@ -449,8 +460,9 @@ function checkGameOver() {
     let lastPlayer = 0;
 
     for (let i = 0; i < players.length; i++) {
-        if (players[i].cards.length == 0) {
+        if (players[i].cards.length == 0 && !players[i].eliminated) {
             players[i].eliminated = true;
+            console.log(players[i].name + " has been eliminated");
         }
 
         if (!players[i].eliminated) {
@@ -506,6 +518,11 @@ window.addEventListener("keydown", function(event) {
     if (event.key.toLowerCase() === "n") {
         playRound();
     }
+
+    if (event.key.toLowerCase() === "f") {
+        fastForward = !fastForward;
+        console.log("fast forwarding");
+    }
 });
 
 // Function that runs once per frame to update and draw the scene
@@ -519,7 +536,15 @@ function animate() {
         collectAnimation();
     }
 
+    if (fastForward && !movingCards && !collectingCards && !roundWaiting && !gameOver) {
+        playRound();
+    }
+
     if (roundWaiting) {
+        if (fastForward) {
+            winnerTimer = clock.getElapsedTime() - 1;
+        }
+        
         if (winnerTimer == 0) {
             winnerTimer = clock.getElapsedTime();
         }
