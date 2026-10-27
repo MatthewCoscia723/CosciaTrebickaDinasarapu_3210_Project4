@@ -201,6 +201,9 @@ for (let i = 0; i < hands.length; i++) {
 }
 
 let playedCards = [];
+let comparisonCards = [];
+let cardsToMove = [];
+
 let winner = 0;
 let roundWaiting = false;
 let movingCards = false;
@@ -208,31 +211,39 @@ let moveAmount = 0;
 let collectingCards = false;
 let winnerScale = 1;
 let winnerTimer = 0;
+let warRound = false;
+let warStage = 0;
+
 const clock = new THREE.Clock();
 
 function drawCards() {
     playedCards = [];
+    comparisonCards = [];
+    cardsToMove = [];
+
     movingCards = true;
     winnerScale = 1;
+    warRound = false;
 
     for (let i = 0; i < players.length; i++) {
         let card = players[i].cards.shift();
 
+        card.playerIndex = i;
+        card.faceDown = false;
+
+        if (card == undefined) {
+            continue;
+        }
+        
         playedCards.push(card);
+        comparisonCards.push(card);
+        cardsToMove.push(card);
 
         card.startX = card.mesh.position.x;
         card.startY = card.mesh.position.y;
         card.startZ = card.mesh.position.z;
 
-        if (i == 0) {
-            card.endX = -1.5
-        }
-        else if (i == 1) {
-            card.endX = 0;
-        }
-        else {
-            card.endX = 1.5;
-        }
+        card.endX = (i - 1) * 1.5;
         card.endY = 0.05;
         card.endZ = 0;
         
@@ -243,22 +254,82 @@ function drawCards() {
     moveAmount = 0;
 }
 
+function drawWarCards() {
+    comparisonCards = [];
+    cardsToMove = [];
+    movingCards = true;
+
+    for (let i = 0; i < players.length; i++) {
+        if (warStage == 1 && players[i].cards.length >= 2) {
+            let downCard = players[i].cards.shift();
+
+            downCard.playerIndex = i;
+            downCard.faceDown = true;
+
+            playedCards.push(downCard);
+            cardsToMove.push(downCard);
+
+            downCard.startX = downCard.mesh.position.x;
+            downCard.startY = downCard.mesh.position.y;
+            downCard.startZ = downCard.mesh.position.z;
+
+            downCard.endX = (i - 1) * 1.5;
+            downCard.endY = 0.09;
+            downCard.endZ = 0;
+
+            downCard.mesh.rotation.set(Math.PI, 0, 0);
+        }
+
+        if (warStage == 2 && players[i].cards.length > 0) {
+            let card = players[i].cards.shift();
+
+            card.playerIndex = i;
+            card.faceDown = false;
+
+            playedCards.push(card);
+            comparisonCards.push(card);
+            cardsToMove.push(card);
+
+            card.startX = card.mesh.position.x;
+            card.startY = card.mesh.position.y;
+            card.startZ = card.mesh.position.z;
+
+            card.endX = (i - 1) * 1.5;
+            card.endY = 0.13;
+            card.endZ = 0;
+
+            card.mesh.rotation.set(Math.PI, 0, 0)
+        }
+        players[i].updatePile();
+    }
+    moveAmount = 0;
+}
+
 function moveCards() {
     moveAmount = moveAmount + 0.02;
 
-    for (let i = 0; i < playedCards.length; i++) {
-        let card = playedCards[i];
+    for (let i = 0; i < cardsToMove.length; i++) {
+        let card = cardsToMove[i];
 
         card.mesh.position.x = card.startX + (card.endX - card.startX) * moveAmount;
         card.mesh.position.y = card.startY + (card.endY - card.startY) * moveAmount;
         card.mesh.position.z = card.startZ + (card.endZ - card.startZ) * moveAmount;
 
-        card.mesh.rotation.x = Math.PI * (1 - moveAmount);
+        if (card.faceDown) {
+            card.mesh.rotation.x = Math.PI;
+        }
+        else {
+            card.mesh.rotation.x = Math.PI * (1 - moveAmount);
+        }
     }
 
     if (moveAmount >= 1) {
         movingCards = false;
-        findWinner();
+        
+        if (warStage != 1) {
+            findWinner();
+        }
+
         roundWaiting = true;
     }
 }
@@ -287,19 +358,47 @@ function collectAnimation() {
 
         playedCards = [];
         collectingCards = false;
+        warStage = 0;
     }
 }
 
 function findWinner() {
     winner = 0;
 
-    for (let i = 1; i < playedCards.length; i++) {
-        if (playedCards[i].value > playedCards[winner].value) {
+    if (comparisonCards.length == 0) {
+        return;
+    }
+
+    for (let i = 1; i < comparisonCards.length; i++) {
+        if (comparisonCards[i].value > comparisonCards[winner].value) {
             winner = i
         }
     }
 
-    console.log(players[winner].name + " wins with a " + playedCards[winner].value);
+    let highestValue = comparisonCards[winner].value;
+    let tie = false;
+
+    for (let i = 0; i < comparisonCards.length; i++) {
+        if (i != winner && comparisonCards[i].value == highestValue) {
+            tie = true;
+        }
+    }
+
+    if (tie) {
+        warRound = true;
+        console.log("war is happening");
+    }
+    else {
+        winner = comparisonCards[winner].playerIndex;
+        
+        if (warStage > 0) {
+            console.log(players[winner].name + " wins war with a " + highestValue);
+        }
+        else {
+            console.log(players[winner].name + " wins the round with a " + highestValue);
+        }
+        warRound = false;
+    }
 }
 
 function playRound() {
@@ -348,29 +447,45 @@ function animate() {
             winnerTimer = clock.getElapsedTime();
         }
 
-        if (winnerScale < 1.25) {
+        if (!warRound && winnerScale < 1.25) {
             winnerScale = winnerScale + 0.01;
-            playedCards[winner].mesh.scale.set(winnerScale, winnerScale, winnerScale);
+
+            let winningCard = comparisonCards.find(card => card.playerIndex == winner);
+            if (winningCard != undefined) {
+                winningCard.mesh.scale.set(winnerScale, winnerScale, winnerScale);
+            }
         }
 
         if (clock.getElapsedTime() - winnerTimer >= 1) {
-            collectingCards = true;
-            moveAmount = 0;
-
-            for (let i = 0; i < playedCards.length; i++) {
-                let card = playedCards[i];
-
-                card.startX = card.mesh.position.x;
-                card.startY = card.mesh.position.y;
-                card.startZ = card.mesh.position.z;
-
-                card.endX = players[winner].pilePosition.x;
-                card.endY = Card.thickness / 2;
-                card.endZ = players[winner].pilePosition.z;
-            }
-
             roundWaiting = false;
             winnerTimer = 0;
+            
+            if (warRound) {
+                if (warStage == 0 || warStage == 2) {
+                    warStage = 1;
+                    drawWarCards();
+                }
+                else {
+                    warStage = 2;
+                    drawWarCards();
+                }
+            }
+            else {
+                collectingCards = true;
+                moveAmount = 0;
+
+                for (let i = 0; i < playedCards.length; i++) {
+                    let card = playedCards[i];
+
+                    card.startX = card.mesh.position.x;
+                    card.startY = card.mesh.position.y;
+                    card.startZ = card.mesh.position.z;
+
+                    card.endX = players[winner].pilePosition.x;
+                    card.endY = Card.thickness / 2;
+                    card.endZ = players[winner].pilePosition.z;
+                }
+            }
         }
     }
     renderer.render(scene, camera);
