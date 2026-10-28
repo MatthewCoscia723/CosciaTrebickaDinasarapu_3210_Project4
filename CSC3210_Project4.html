@@ -15,6 +15,17 @@
 // Initializes the Scene
 const scene = new THREE.Scene();
 
+// Initializes the Skybox
+const skyboxGeometry = new THREE.BoxGeometry(500, 500, 500);
+
+const skyboxMaterial = new THREE.MeshBasicMaterial({
+    color: 0x0B1020, // Sky blue color
+    side: THREE.BackSide // Render the inside of the box
+});
+
+const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
+scene.add(skybox);
+
 // Configures the Camera (Perspective Projection)
 // Arguments: Field of View (deg), Aspect Ratio, Near Clipping Plane, Far Clipping Plane
 const camera = new THREE.PerspectiveCamera(
