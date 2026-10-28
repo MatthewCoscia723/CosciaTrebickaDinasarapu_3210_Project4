@@ -19,7 +19,7 @@ const scene = new THREE.Scene();
 const skyboxGeometry = new THREE.BoxGeometry(500, 500, 500);
 
 const skyboxMaterial = new THREE.MeshBasicMaterial({
-    color: 0x0B1020, // Sky blue color
+    color: 0x0B1020, // Dark navy color
     side: THREE.BackSide // Render the inside of the box
 });
 
@@ -37,6 +37,21 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 9, 15); // Raises and pulls back the camera to look down at the table
 camera.lookAt(new THREE.Vector3(0, 0, 0)); // Aims the camera at the center of the table
 scene.add(camera);
+
+// Object that tracks which movement keys are currently pressed
+const movementKeys = {
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+};
+
+const cameraMoveSpeed = 5; // Speed at which the camera moves in units per second
+
+const cameraMinX = -12;
+const cameraMaxX = 12;
+const cameraMinZ = 8;
+const cameraMaxZ = 25;
 
 // Loader that turns image files into textures
 const textureLoader = new THREE.TextureLoader();
@@ -192,6 +207,10 @@ scene.add(table);
 // Lighting that illuminates the scene
 const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Soft white light that illuminates all objects equally
 scene.add(ambientLight);
+
+const pointLight = new THREE.PointLight(0xffffff, 0.5, 20); // Point light that shines from above the table
+pointLight.position.set(0, 10, 0);
+scene.add(pointLight);
 
 // Deck that is shuffled and dealt to 3 players
 const deck = new Deck();
@@ -601,11 +620,73 @@ window.addEventListener("keydown", function(event) {
     if (event.key.toLowerCase() === "l") {
         ambientLight.visible = !ambientLight.visible;
     }
+
+    if (event.key.toLowerCase() === "p") {
+        pointLight.visible = !pointLight.visible;
+    }
+
+    if (event.key.toLowerCase() === "w") {
+        movementKeys.w = true;
+    }
+
+    if (event.key.toLowerCase() === "a") {
+        movementKeys.a = true;
+    }
+
+    if (event.key.toLowerCase() === "s") {
+        movementKeys.s = true;
+    }
+
+    if (event.key.toLowerCase() === "d") {
+        movementKeys.d = true;
+    }
+});
+
+window.addEventListener("keyup", function(event) {
+    if (event.key.toLowerCase() === "w") {
+        movementKeys.w = false;
+    }
+
+    if (event.key.toLowerCase() === "a") {
+        movementKeys.a = false;
+    }
+
+    if (event.key.toLowerCase() === "s") {
+        movementKeys.s = false;
+    }
+
+    if (event.key.toLowerCase() === "d") {
+        movementKeys.d = false;
+    }
 });
 
 // Function that runs once per frame to update and draw the scene
 function animate() {
     requestAnimationFrame(animate); // Schedules the next frame
+
+    const deltaTime = clock.getDelta(); // Time elapsed since the last frame in seconds
+
+    if (movementKeys.w) {
+        camera.position.z -= cameraMoveSpeed * deltaTime;
+    }
+
+    if (movementKeys.s) {
+        camera.position.z += cameraMoveSpeed * deltaTime;
+    }
+
+    if (movementKeys.a) {
+        camera.position.x -= cameraMoveSpeed * deltaTime;
+    }
+
+    if (movementKeys.d) {
+        camera.position.x += cameraMoveSpeed * deltaTime;
+    }
+
+    camera.position.x = THREE.MathUtils.clamp(camera.position.x, cameraMinX, cameraMaxX);
+    camera.position.z = THREE.MathUtils.clamp(camera.position.z, cameraMinZ, cameraMaxZ);
+
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Keeps the camera aimed at the center of the table
+
     // constantly call movingCards to animate moving the cards
     if (movingCards) {
         moveCards();
