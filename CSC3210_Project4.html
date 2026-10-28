@@ -378,10 +378,10 @@ function drawWarCards() {
 function moveCards() {
     // if fast forward, just make the cards move faster
     if (fastForward) {
-        moveAmount = moveAmount + 0.15;
+        moveAmount = Math.min(moveAmount + 0.15, 1);
     }
     else {
-        moveAmount = moveAmount + 0.02;
+        moveAmount = Math.min(moveAmount + 0.02, 1);
     }
 
     // updates the position and rotation of every moving card
@@ -417,12 +417,12 @@ function moveCards() {
 
 // animation #2: winner collects all cards in the middle
 function collectAnimation() {
-    // fast forward speeds up the animation
+    // fast forward speeds up the animation. movement is the movement speed
     if (fastForward) {
-        moveAmount = moveAmount + 0.15;
+        moveAmount = Math.min(moveAmount + 0.15, 1); 
     }
     else {
-        moveAmount = moveAmount + 0.02;
+        moveAmount = Math.min(moveAmount + 0.02, 1);
     }
 
     // moves each played card towards the winner pile
@@ -635,7 +635,7 @@ function animate() {
             }
         }
 
-        // continue when intermission period finishes
+        // continue when intermission period finishes. winnerTimer controls intermission period
         if (clock.getElapsedTime() - winnerTimer >= 1) {
             roundWaiting = false;
             winnerTimer = 0;
