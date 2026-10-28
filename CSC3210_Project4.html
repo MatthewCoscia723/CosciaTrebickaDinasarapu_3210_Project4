@@ -189,8 +189,9 @@ const table = new THREE.Mesh(
 table.rotation.x = -Math.PI / 2; // Rotates the plane from standing upright to lying flat, facing up
 scene.add(table);
 
-// Temporary light so the cards are visible until the real lighting is added
-scene.add(new THREE.AmbientLight(0xffffff, 1));
+// Lighting that illuminates the scene
+const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Soft white light that illuminates all objects equally
+scene.add(ambientLight);
 
 // Deck that is shuffled and dealt to 3 players
 const deck = new Deck();
@@ -595,6 +596,10 @@ window.addEventListener("keydown", function(event) {
         else {
             console.log("slowing down");
         }
+    }
+
+    if (event.key.toLowerCase() === "l") {
+        ambientLight.visible = !ambientLight.visible;
     }
 });
 
