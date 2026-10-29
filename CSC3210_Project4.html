@@ -255,13 +255,6 @@ directionalLight.target.position.set(0, 0, 0);
 scene.add(directionalLight);
 scene.add(directionalLight.target);
 
-const sunGeometry = new THREE.SphereGeometry(1, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-
-sun.position.set(7, 0, -12); // Position the sun in the scene
-scene.add(sun);
-
 // Deck that is shuffled and dealt to 3 players
 const deck = new Deck();
 deck.shuffle();
