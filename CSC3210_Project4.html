@@ -273,6 +273,9 @@ let roundWaiting = false;
 let movingCards = false;
 let collectingCards = false;
 let moveAmount = 0;
+const cardMoveSpeed = 0.2;
+const fastForwardSpeed = 5; 
+
 
 //attributes for winning card + winning players
 let winner = 0;
@@ -437,14 +440,16 @@ function drawWarCards() {
 }
 
 // helper method to animate cards from piles to the middle of table (animation #1)
-function moveCards() {
+function moveCards(deltaTime) {
+    
+    let speed = 1 / cardMoveSpeed;
+
     // if fast forward, just make the cards move faster
     if (fastForward) {
-        moveAmount = Math.min(moveAmount + 0.15, 1);
+        speed = speed * fastForwardSpeed;
     }
-    else {
-        moveAmount = Math.min(moveAmount + 0.02, 1);
-    }
+    
+    moveAmount = Math.min(moveAmount + speed * deltaTime, 1);
 
     // updates the position and rotation of every moving card
     for (let i = 0; i < cardsToMove.length; i++) {
@@ -478,14 +483,15 @@ function moveCards() {
 }
 
 // animation #2: winner collects all cards in the middle
-function collectAnimation() {
+function collectAnimation(deltaTime) {
+    let speed = 1 / cardMoveSpeed;
+    
     // fast forward speeds up the animation. movement is the movement speed
     if (fastForward) {
-        moveAmount = Math.min(moveAmount + 0.15, 1); 
+        speed = speed * fastForwardSpeed;
     }
-    else {
-        moveAmount = Math.min(moveAmount + 0.02, 1);
-    }
+
+    moveAmount = Math.min(moveAmount + speed * deltaTime, 1);
 
     // moves each played card towards the winner pile
     for (let i = 0; i < playedCards.length; i++) {
@@ -728,12 +734,12 @@ function animate() {
 
     // constantly call movingCards to animate moving the cards
     if (movingCards) {
-        moveCards();
+        moveCards(deltaTime);
     }
 
     // constantly call collectingCards to animate winner collecting the cards
     if (collectingCards) {
-        collectAnimation();
+        collectAnimation(deltaTime);
     }
 
     // constantly play rounds if in fast forward mode
