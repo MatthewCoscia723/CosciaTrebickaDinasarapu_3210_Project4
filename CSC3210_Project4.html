@@ -3,10 +3,44 @@
     <title>CSC3210 War Wagers</title>
     <style> 
     body {margin: 0; overflow: hidden}
+
+    /* Panel pinned to the top left corner, drawn above the 3D canvas */
+    #hud {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 1;
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.6); /* Black at 60% opacity so the scene shows through */
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        border-radius: 6px;
+        pointer-events: none; /* Lets mouse clicks pass through to the scene */
+    }
+
+    /* Heading for each section of the HUD */
+    .hudTitle {
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
     </style>
 </head>
 <body>
     
+  <!-- On screen display with the controls and game messages -->
+  <div id="hud">
+    <div class="hudTitle">Controls</div>
+    <div>N - Play next round</div>
+    <div>F - Toggle fast forward</div>
+    <div>L - Toggle ambient light</div>
+    <div>P - Toggle point light</div>
+    <div>W A S D - Move point light</div>
+    <div>O - Toggle sunlight/directional light</div>
+    <div>M - Toggle shadows</div>
+  </div> 
+  
   <!-- Three.js Dependencies -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
