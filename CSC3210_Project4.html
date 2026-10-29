@@ -212,8 +212,20 @@ table.receiveShadow = true; // Allows the table to receive shadows from the card
 const ambientLight = new THREE.AmbientLight(0x405878, 0.6); // Cool blue ambient light that gives the scene a moody overall tone.
 scene.add(ambientLight);
 
-const pointLight = new THREE.PointLight(0xffffff, 0.5, 20); // Point light that shines from above the table
-pointLight.position.set(0, 10, 0);
+// Point-light sphere + geometry
+const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+const sphereMaterial = new THREE.MeshBasicMaterial({color: 0xffff00});
+const cylinderGeometry = new THREE.CylinderGeometry(0.08, 0.08, 5, 16);
+const cylinderMaterial = new THREE.MeshBasicMaterial({color: 0xaaaaaa});
+const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+sphere.position.set(0, 5, 4);
+cylinder.position.set(0, 7.5, 4);
+scene.add(sphere);
+scene.add(cylinder);
+
+const pointLight = new THREE.PointLight(0xff0000, 0.5, 100); // Point light that shines from above the table
+pointLight.position.set(sphere);
 scene.add(pointLight);
 
 // Directional light that shines from the side like sunlight.
