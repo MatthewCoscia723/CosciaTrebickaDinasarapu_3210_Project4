@@ -1,6 +1,6 @@
 <html>
 <head>
-    <title>CSC3210 War </title>
+    <title>CSC3210 War Wagers</title>
     <style> 
     body {margin: 0; overflow: hidden}
     </style>
@@ -52,8 +52,8 @@ const pointLightMoveSpeed = 5; // Speed at which the point light moves in units 
 
 const pointLightMinX = -6;
 const pointLightMaxX = 6;
-const pointLightMinZ = -6;
-const pointLightMaxZ = 6;
+const pointLightMinZ = -10; // Keeps the bulb at the table's back edge
+const pointLightMaxZ = 2; // Keeps the bulb at the table's front edge
 
 // Loader that turns image files into textures
 const textureLoader = new THREE.TextureLoader();
@@ -758,8 +758,8 @@ function animate() {
         hangingLight.position.x += pointLightMoveSpeed * deltaTime
     }
 
-    pointLight.position.x = THREE.MathUtils.clamp(pointLight.position.x, pointLightMinX, pointLightMaxX);
-    pointLight.position.z = THREE.MathUtils.clamp(pointLight.position.z, pointLightMinZ, pointLightMaxZ);
+    hangingLight.position.x = THREE.MathUtils.clamp(hangingLight.position.x, pointLightMinX, pointLightMaxX);
+    hangingLight.position.z = THREE.MathUtils.clamp(hangingLight.position.z, pointLightMinZ, pointLightMaxZ);
 
     // constantly call movingCards to animate moving the cards
     if (movingCards) {
