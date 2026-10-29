@@ -215,10 +215,27 @@ const ambientLight = new THREE.AmbientLight(0x5f7898, 1.15); // Cool ambient lig
 scene.add(ambientLight);
 
 // Point-light sphere + geometry
-const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
-const sphereMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
+const sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32); // Larger bulb so it is easy to see from the camera
+
+// Glowing bulb material that lights itself with an emissive color
+const sphereMaterial = new THREE.MeshStandardMaterial({
+    color: 0xcccccc, // Pale glass color shown when the bulb is off
+    emissive: 0x00ff00, // Green glow that matches the point light's color
+    emissiveIntensity: 1 // Full glow while the light is on
+});
+
 const cylinderGeometry = new THREE.CylinderGeometry(0.08, 0.08, 5, 16);
-const cylinderMaterial = new THREE.MeshBasicMaterial({color: 0xaaaaaa});
+
+// Texture for the metal rod the lamp hangs from
+const metalTexture = textureLoader.load("assets/metal.jpg");
+
+// Lit metal material so the rod reacts to the sun and ambient light
+const cylinderMaterial = new THREE.MeshStandardMaterial({
+    map: metalTexture,
+    metalness: 0.5, // Halfway metallic so it still shows its texture without needing reflection
+    roughness: 0.4 // Fairly smooth so the sun leaves a soft shine along one side
+});
+
 const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
 const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 sphere.position.set(0, 5, 4);
@@ -673,6 +690,7 @@ window.addEventListener("keydown", function(event) {
 
     if (event.key.toLowerCase() === "p") {
         pointLight.visible = !pointLight.visible;
+        sphereMaterial.emissiveIntensity = pointLight.visible ? 1 : 0; // Turns the bulb's glow off with the light
     }
 
     if (event.key.toLowerCase() === "w") {
