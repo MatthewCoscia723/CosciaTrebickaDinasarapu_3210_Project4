@@ -214,19 +214,24 @@ scene.add(ambientLight);
 
 // Point-light sphere + geometry
 const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
-const sphereMaterial = new THREE.MeshBasicMaterial({color: 0xffff00});
+const sphereMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
 const cylinderGeometry = new THREE.CylinderGeometry(0.08, 0.08, 5, 16);
 const cylinderMaterial = new THREE.MeshBasicMaterial({color: 0xaaaaaa});
 const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
 const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 sphere.position.set(0, 5, 4);
 cylinder.position.set(0, 7.5, 4);
-scene.add(sphere);
-scene.add(cylinder);
 
-const pointLight = new THREE.PointLight(0xff0000, 0.5, 100); // Point light that shines from above the table
-pointLight.position.set(sphere);
-scene.add(pointLight);
+const pointLight = new THREE.PointLight(0x00ff00, 0.5, 10); // Point light that shines from above the table
+pointLight.position.x = sphere.position.x;
+pointLight.position.y = sphere.position.y;
+pointLight.position.z = sphere.position.z;
+
+let hangingLight = new THREE.Group();
+hangingLight.add(sphere);
+hangingLight.add(cylinder);
+hangingLight.add(pointLight);
+scene.add(hangingLight);
 
 // Directional light that shines from the side like sunlight.
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -726,19 +731,19 @@ function animate() {
     const deltaTime = clock.getDelta(); // Time elapsed since the last frame in seconds
 
     if (movementKeys.w) {
-        pointLight.position.z -= pointLightMoveSpeed * deltaTime;
+        hangingLight.position.z -= pointLightMoveSpeed * deltaTime
     }
 
     if (movementKeys.s) {
-        pointLight.position.z += pointLightMoveSpeed * deltaTime;
+        hangingLight.position.z += pointLightMoveSpeed * deltaTime
     }
 
     if (movementKeys.a) {
-        pointLight.position.x -= pointLightMoveSpeed * deltaTime;
+        hangingLight.position.x -= pointLightMoveSpeed * deltaTime
     }
 
     if (movementKeys.d) {
-        pointLight.position.x += pointLightMoveSpeed * deltaTime;
+        hangingLight.position.x += pointLightMoveSpeed * deltaTime
     }
 
     pointLight.position.x = THREE.MathUtils.clamp(pointLight.position.x, pointLightMinX, pointLightMaxX);
